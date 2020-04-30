@@ -1,8 +1,13 @@
 package com.example.parkingplus;
 import android.Manifest;
 import android.app.Dialog;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.os.Looper;
 import android.util.Log;
 import android.widget.Toast;
@@ -34,30 +39,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     //debugging
     private static final String TAG = "MainActivity";
 
-    //vars
+    //permissions
     private  boolean userPermissionGranted = false;
-    //location
+    //parking spots
+    private List<Location> parkingSpots;
     private Location mCurrentLocation; //SET WITH SetCurrentLocation(Location location)
     private Boolean firstLocation = true; //
-
+    //map
+    private GoogleMap mMap;
+    //location
+    private FusedLocationProviderClient fusedLocationClient;
     private LocationCallback locationCallback;
     private boolean requestingLocationUpdates = true; // toggles location updates
     private LocationRequest locationRequest = getDefaultLocationRequest();
-    //elements
-    private GoogleMap mMap;
-    //clients
-    private FusedLocationProviderClient fusedLocationClient;
+    //db
+    private ServiceConnection mDBConnection;
     FireBaseService databaseClient;
+    private Boolean mShouldUnbind;
 
-    private void SetCurrentLocation(Location location){
-        mCurrentLocation = location;
-        mMap.setMyLocationEnabled(true);
 
-        if (firstLocation == true) {
-            moveCameraTo(mCurrentLocation);
-            firstLocation = false;
-        }
-    }
+    //lifecycle overrides
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,7 +69,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         createLocationCallBackObject();
         startLocationUpdates();
 
-        databaseClient = new FireBaseService();
+        createConnectToDatabaseService();
+        doBindDBService();
 
         setContentView(R.layout.activity_maps);
 
@@ -78,6 +80,22 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         mapFragment.getMapAsync(this);
 
+
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (requestingLocationUpdates) {
+            startLocationUpdates();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        doUnbindService();
     }
 
     private void InitialChecks(){
@@ -93,6 +111,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             finish();
         }
     }
+
+    // permissions
 
     private void requestPermissions() {
 
@@ -139,22 +159,58 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
-        for (Location l : databaseClient.getLocations()){
-            mMap.addMarker(new MarkerOptions().position(toLatLng(l)).title("a free parking spot"));
-        }
-
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (requestingLocationUpdates) {
-            startLocationUpdates();
+    // database service connetion
+
+    private void createConnectToDatabaseService() {
+
+        mDBConnection = new ServiceConnection() {
+            public void onServiceConnected(ComponentName className, IBinder service) {
+                FireBaseService.FireBaseBinder binder = (FireBaseService.FireBaseBinder) service;
+                databaseClient = binder.getService();
+                parkingSpots = databaseClient.getLocations();
+
+                for (Location l : parkingSpots){
+                    mMap.addMarker(new MarkerOptions().position(toLatLng(l)).title("a free parking spot"));
+                }
+
+            }
+
+            public void onServiceDisconnected(ComponentName className) {
+                databaseClient = null;
+            }
+        };
+    }
+
+    void doBindDBService() {
+        if (bindService(new Intent(this, FireBaseService.class),
+                mDBConnection, Context.BIND_AUTO_CREATE)) {
+            mShouldUnbind = true;
+        } else {
+            Log.e(TAG, "Error: The requested service doesn't " +
+                    "exist, or this client isn't allowed access to it.");
+        }
+    }
+
+    void doUnbindService() {
+        if (mShouldUnbind) {
+            unbindService(mDBConnection);
+            mShouldUnbind = false;
         }
     }
 
     //location related
+
+    private void SetCurrentLocation(Location location){
+        mCurrentLocation = location;
+        mMap.setMyLocationEnabled(true);
+
+        if (firstLocation == true) {
+            moveCameraTo(mCurrentLocation);
+            firstLocation = false;
+        }
+    }
 
     private void startLocationUpdates() {
         fusedLocationClient.requestLocationUpdates(locationRequest,
