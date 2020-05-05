@@ -11,14 +11,33 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 
+import com.google.firebase.database.*;
+
 import java.util.ArrayList;
 import java.util.List;
 
 
 public class FireBaseService extends Service {
-
+    FirebaseDatabase database = FirebaseDatabase.getInstance();
+    DatabaseReference myRef = database.getReference("message");
     List<Location> locations = new ArrayList<Location>();
     private final IBinder mBinder = new FireBaseBinder();
+
+    myRef.addValueEventListener(new ValueEventListener() {
+        @Override
+        public void onDataChange(DataSnapshot dataSnapshot) {
+            // This method is called once with the initial value and again
+            // whenever data at this location is updated.
+            String value = dataSnapshot.getValue(String.class);
+            Log.d(TAG, "Value is: " + value);
+        }
+
+        @Override
+        public void onCancelled(DatabaseError error) {
+            // Failed to read value
+            Log.w(TAG, "Failed to read value.", error.toException());
+        }
+
 
     public class FireBaseBinder extends Binder {
         public FireBaseService getService(){
