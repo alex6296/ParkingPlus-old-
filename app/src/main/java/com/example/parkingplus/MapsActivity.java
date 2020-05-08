@@ -10,8 +10,14 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Looper;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
+
+import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
+import androidx.viewpager.widget.ViewPager;
+
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -31,6 +37,7 @@ import com.karumi.dexter.PermissionToken;
 import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
 import com.example.database.FireBaseService;
+
 
 import java.util.List;
 
@@ -56,6 +63,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private ServiceConnection mDBConnection;
     FireBaseService databaseClient;
     private Boolean mShouldUnbind;
+    //button
+    private Button goToLocation;
+    private FragmentAdapter mSectionsStatePagerAdapter;
+    private ViewPager mViewPager;
+
 
 
     //lifecycle overrides
@@ -68,11 +80,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         createLocationCallBackObject();
         startLocationUpdates();
-
         createConnectToDatabaseService();
         doBindDBService();
-
         setContentView(R.layout.activity_maps);
+
+        mSectionsStatePagerAdapter = new FragmentAdapter(getSupportFragmentManager());
+
+        mViewPager = (ViewPager) findViewById(R.id.container);
+        setupViewPager(mViewPager);
+
+
+        goToLocation = findViewById(R.id.goToLocation);
+        goToLocation.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+               setViewPager(0);
+            }
+        });
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -256,6 +280,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void moveCameraTo(LatLng coordinates, float zoom){
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(coordinates,zoom));
+    }
+
+    private void setupViewPager(ViewPager viewPager){
+        MapsActivity mapactivity = new MapsActivity();
+
+        FragmentAdapter adapter = new FragmentAdapter(getSupportFragmentManager());
+
+        adapter.addFragment(new LocationInfo(),"LocationFragment");
+        viewPager.setAdapter(adapter);
+    }
+
+    public void setViewPager(int fragmentNumber){
+        mViewPager.setCurrentItem(fragmentNumber);
+
     }
 
 }
