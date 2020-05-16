@@ -48,7 +48,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     //location
     private FusedLocationProviderClient fusedLocationClient;
     private LocationCallback locationCallback;
-    private boolean requestingLocationUpdates = true; // toggles location updates
     private LocationRequest locationRequest = getDefaultLocationRequest();
 
     @Override
@@ -61,16 +60,17 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.map, container, false);
+    }
 
-        View view = inflater.inflate(R.layout.map, container, false);
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
         // Gets the MapView from the XML layout and creates it
         final SupportMapFragment myMAPF = (SupportMapFragment) getChildFragmentManager()
                 .findFragmentById(R.id.map);
         myMAPF.getMapAsync(this);
-        return  view;
     }
-
-
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -82,7 +82,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     }
 
     //location related
-    private void setParkingSpots(List<Location> locations){
+   public void setParkingSpots(List<Location> locations){
         parkingSpots = locations;
         for (Location l : parkingSpots){
             mMap.addMarker(new MarkerOptions().position(toLatLng(l)).title("a free parking spot"));

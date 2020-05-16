@@ -6,6 +6,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.location.Location;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
@@ -25,6 +26,9 @@ import com.karumi.dexter.PermissionToken;
 import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.util.List;
 
 public class mainActivity extends FragmentActivity  {
@@ -36,6 +40,8 @@ public class mainActivity extends FragmentActivity  {
     //db
     private ServiceConnection mDBConnection;
     FireBaseService databaseClient;
+    //fragments
+    MapFragment mMapFragment;
 
     FragmentManager fm;
 
@@ -50,15 +56,18 @@ public class mainActivity extends FragmentActivity  {
         //set view
         setContentView(R.layout.main);
 
-        //create fragments
-        Fragment map = new MapFragment();
+        mMapFragment = new MapFragment();
 
         //set fragment
         fm = getSupportFragmentManager();
         FragmentTransaction transaction = fm.beginTransaction();
-        transaction.replace(R.id.frameLayout, map);
+        transaction.replace(R.id.frameLayout, mMapFragment);
         transaction.commit();
+    }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
     }
 
     @Override
@@ -75,6 +84,7 @@ public class mainActivity extends FragmentActivity  {
             public void onServiceConnected(ComponentName className, IBinder service) {
                 FireBaseService.FireBaseBinder binder = (FireBaseService.FireBaseBinder) service;
                 databaseClient = binder.getService();
+                mMapFragment.setParkingSpots(databaseClient.getLocations());
 
             }
             @Override
@@ -91,9 +101,8 @@ public class mainActivity extends FragmentActivity  {
             Log.e(TAG, "Error: The requested service doesn't " +
                     "exist, or this client isn't allowed access to it.");
         }
+
     }
-
-
 
     // permissions
     private void InitialChecks(){
