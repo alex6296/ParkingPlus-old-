@@ -19,6 +19,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
+        <service android:enabled="true" android:name="com.example.database.FireBaseService" />
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.
              (See the file "res/values/google_maps_api.xml").
@@ -32,15 +33,17 @@
             android:value="AIzaSyAZIvUHdpLoWjNNNb4DLtUnCOSPihpFL3c" />
 
         <activity
-            android:name=".mainActivity"
-            android:label="@string/title_activity">
+            android:name=".MapsActivity"
+            android:label="@string/title_activity_maps">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
         </activity>
-        <service android:enabled="true" android:name="com.example.database.FireBaseService" />
+
+
     </application>
 
 </manifest>

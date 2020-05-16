@@ -10,15 +10,12 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Looper;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager.widget.ViewPager;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -30,7 +27,6 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
@@ -45,11 +41,13 @@ import com.example.database.FireBaseService;
 
 import java.util.List;
 
-public class MapsFragment extends Fragment implements OnMapReadyCallback {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     //debugging
     private static final String TAG = "MainActivity";
 
+    //permissions
+    private  boolean userPermissionGranted = false;
     //parking spots
     private List<Location> parkingSpots;
     private Location mCurrentLocation; //SET WITH SetCurrentLocation(Location location)
@@ -67,47 +65,51 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     private Boolean mShouldUnbind;
     //button
     private Button goToLocation;
+    private FragmentAdapter mSectionsStatePagerAdapter;
     private ViewPager mViewPager;
 
-    //map
-    MapView mMapView;
 
 
     //lifecycle overrides
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(getActivity());
+        InitialChecks(); // check google service --v, user-permissions etc. //terminates app if fails
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         createLocationCallBackObject();
         startLocationUpdates();
         createConnectToDatabaseService();
         doBindDBService();
+        setContentView(R.layout.activity_maps);
+
+        mSectionsStatePagerAdapter = new FragmentAdapter(getSupportFragmentManager());
+
+        mViewPager = (ViewPager) findViewById(R.id.container);
+        setupViewPager(mViewPager);
+
+
+        goToLocation = findViewById(R.id.goToLocation);
+        goToLocation.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+               setViewPager(0);
+            }
+        });
+
+        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map);
+
+        mapFragment.getMapAsync(this);
+
+
 
     }
 
-    @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-            // Inflate the layout for this fragment
-            return inflater.inflate(R.layout.activity_maps, container, false);
-    }
-
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-
-
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-
-    }
-
-    @Override
-    public void onResume() {
+    protected void onResume() {
         super.onResume();
         if (requestingLocationUpdates) {
             startLocationUpdates();
@@ -115,11 +117,68 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     }
 
     @Override
-    public void onDestroy() {
+    protected void onDestroy() {
         super.onDestroy();
         doUnbindService();
     }
 
+    private void InitialChecks(){
+        //Checking if google services is working
+        if(!googleServicesWorks()){
+            Log.d(TAG, "googleServiceVersionCheck:failed ");
+            finish();
+        }
+        //Checking if permissions are granted
+        requestPermissions();
+        if (!userPermissionGranted){
+            Log.d(TAG, "userPermissions: failed ");
+            finish();
+        }
+    }
+
+    // permissions
+
+    private void requestPermissions() {
+
+        Dexter.withActivity(this)
+                .withPermissions(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                        // if more permissions need add here
+                ).withListener(new MultiplePermissionsListener() {
+            @Override public void onPermissionsChecked(MultiplePermissionsReport report) {
+
+                if(report.areAllPermissionsGranted()){
+                    userPermissionGranted = true;
+                }
+            }
+            @Override public void onPermissionRationaleShouldBeShown(List<PermissionRequest> permissions, PermissionToken token) {
+                token.continuePermissionRequest();
+            }
+        }).check();
+
+
+    }
+
+    private boolean googleServicesWorks(){
+        Log.d(TAG, "googleServiceVersionCheck: checking validity service version ");
+        int available = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(MapsActivity.this);
+
+        if (available == ConnectionResult.SUCCESS){
+            Log.d(TAG, "googleServiceVersionCheck: required services working ");
+            return true;
+        }
+        if (GoogleApiAvailability.getInstance().isUserResolvableError(available)){
+            Log.d(TAG, "googleServiceVersionCheck: UserResolvableError occurred");
+            Dialog dialog = GoogleApiAvailability.getInstance().getErrorDialog(MapsActivity.this,available,9001);
+            dialog.show();
+        } else{
+            Log.d(TAG, "googleServiceVersionCheck: Google services version is incompatible");
+            Toast.makeText(this,"Google services version is incompatible",Toast.LENGTH_LONG).show();
+        }
+        return false;
+
+    }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -131,14 +190,17 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     private void createConnectToDatabaseService() {
 
         mDBConnection = new ServiceConnection() {
-            @Override
             public void onServiceConnected(ComponentName className, IBinder service) {
                 FireBaseService.FireBaseBinder binder = (FireBaseService.FireBaseBinder) service;
                 databaseClient = binder.getService();
-                setParkingSpots(databaseClient.getLocations());
+                parkingSpots = databaseClient.getLocations();
+
+                for (Location l : parkingSpots){
+                    mMap.addMarker(new MarkerOptions().position(toLatLng(l)).title("a free parking spot"));
+                }
 
             }
-            @Override
+
             public void onServiceDisconnected(ComponentName className) {
                 databaseClient = null;
             }
@@ -146,7 +208,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     }
 
     void doBindDBService() {
-        if (getActivity().bindService(new Intent(getActivity(), FireBaseService.class),
+        if (bindService(new Intent(this, FireBaseService.class),
                 mDBConnection, Context.BIND_AUTO_CREATE)) {
             mShouldUnbind = true;
         } else {
@@ -157,20 +219,12 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
     void doUnbindService() {
         if (mShouldUnbind) {
-            getActivity().unbindService(mDBConnection);
+            unbindService(mDBConnection);
             mShouldUnbind = false;
         }
     }
 
     //location related
-
-    private void setParkingSpots(List<Location> locations){
-        parkingSpots = locations;
-
-        for (Location l : parkingSpots){
-            mMap.addMarker(new MarkerOptions().position(toLatLng(l)).title("a free parking spot"));
-        }
-    }
 
     private void SetCurrentLocation(Location location){
         mCurrentLocation = location;
@@ -229,9 +283,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     }
 
     private void setupViewPager(ViewPager viewPager){
-        MapsFragment mapactivity = new MapsFragment();
+        MapsActivity mapactivity = new MapsActivity();
 
-        FragmentAdapter adapter = new FragmentAdapter(getActivity().getSupportFragmentManager());
+        FragmentAdapter adapter = new FragmentAdapter(getSupportFragmentManager());
 
         adapter.addFragment(new LocationInfo(),"LocationFragment");
         viewPager.setAdapter(adapter);

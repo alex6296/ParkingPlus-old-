@@ -39,7 +39,7 @@ public class LocationInfo extends Fragment {
         goBackBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-               // ((MapsFragment)getActivity()).setViewPager(0); //TODO
+                ((MapsActivity)getActivity()).setViewPager(0);
 
 
 
