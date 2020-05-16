@@ -6,18 +6,14 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.location.Location;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.WindowManager;
 import android.widget.Toast;
-
-import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
-
 import com.example.database.FireBaseService;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -26,10 +22,6 @@ import com.karumi.dexter.MultiplePermissionsReport;
 import com.karumi.dexter.PermissionToken;
 import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-
 import java.util.List;
 
 public class mainActivity extends FragmentActivity  {
@@ -44,6 +36,7 @@ public class mainActivity extends FragmentActivity  {
     //fragments
     MapFragment mMapFragment;
 
+    //fragment manager
     FragmentManager fm;
 
     @Override
@@ -58,7 +51,7 @@ public class mainActivity extends FragmentActivity  {
         doBindDBService();
         //set view
         setContentView(R.layout.main);
-
+        //create map fragment
         mMapFragment = new MapFragment();
 
         //set fragment
@@ -66,11 +59,6 @@ public class mainActivity extends FragmentActivity  {
         FragmentTransaction transaction = fm.beginTransaction();
         transaction.replace(R.id.frameLayout, mMapFragment);
         transaction.commit();
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
     }
 
     @Override
