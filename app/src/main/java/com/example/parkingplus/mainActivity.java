@@ -6,15 +6,13 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
-import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.android.gms.maps.MapFragment;
-import com.google.android.gms.maps.OnMapReadyCallback;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.MultiplePermissionsReport;
 import com.karumi.dexter.PermissionToken;
@@ -40,10 +38,12 @@ public class mainActivity extends FragmentActivity  {
         InitialChecks();
         setContentView(R.layout.main);
 
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.add(R.id.map,new MapsFragment());
-        fragmentTransaction.commit();
+        Fragment map = new MapFragment();
+
+        FragmentManager fm = getSupportFragmentManager();
+        FragmentTransaction transaction = fm.beginTransaction();
+        transaction.replace(R.id.frameLayout, map);
+        transaction.commit();
 
     }
 
@@ -62,7 +62,6 @@ public class mainActivity extends FragmentActivity  {
     }
 
     // permissions
-
     private void requestPermissions() {
 
         Dexter.withActivity(this)
