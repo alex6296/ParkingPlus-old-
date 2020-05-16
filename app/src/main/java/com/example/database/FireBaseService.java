@@ -61,6 +61,8 @@ public class FireBaseService extends Service {
         locations.add(l3);
     }
     public void pushToFirebase(Location location){
+
+
         pusher.push().setValue(location);
     }
 

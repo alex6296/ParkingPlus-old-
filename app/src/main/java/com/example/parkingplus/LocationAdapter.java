@@ -50,6 +50,7 @@ public class LocationAdapter extends RecyclerView.Adapter<LocationAdapter.MyView
     // Return the size of your dataset (invoked by the layout manager)
     @Override
     public int getItemCount() {
+        mDataset = new String[]{"bloop", "bloop", "scoop"};
         return mDataset.length;
     }
 }
