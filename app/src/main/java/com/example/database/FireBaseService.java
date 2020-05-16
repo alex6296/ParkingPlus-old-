@@ -61,14 +61,13 @@ public class FireBaseService extends Service {
         locations.add(l3);
     }
     public void pushToFirebase(Location location){
-
-
         pusher.push().setValue(location);
     }
 
     public Location retrieveFromFirebase(String idnumber){
         retriever = FirebaseDatabase.getInstance().getReference().child(idnumber);
         retriever.addValueEventListener(new ValueEventListener() {
+
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                lattitude = (double) dataSnapshot.child("lattitude").getValue();
@@ -101,8 +100,6 @@ public class FireBaseService extends Service {
         // Tell the user we stopped.
         Toast.makeText(this, "FireBaseService stopped", Toast.LENGTH_SHORT).show();
     }
-
-
 
     @Nullable
     @Override
