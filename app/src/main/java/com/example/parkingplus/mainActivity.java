@@ -42,8 +42,8 @@ public class mainActivity extends FragmentActivity  {
 
         FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        //fragmentTransaction.add(R.id.map,new MapsFragment());
-        //fragmentTransaction.commit();
+        fragmentTransaction.add(R.id.map,new MapsFragment());
+        fragmentTransaction.commit();
 
     }
 

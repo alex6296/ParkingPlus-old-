@@ -81,9 +81,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(getActivity());
         createLocationCallBackObject();
         startLocationUpdates();
-        createConnectToDatabaseService();
-        doBindDBService();
-
     }
 
     @Nullable
@@ -124,6 +121,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        createConnectToDatabaseService();
+        doBindDBService();
     }
 
     // database service connetion
@@ -196,7 +195,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
                     Log.d(TAG, "LocationCallBack : onLocationResult: location == null");
                     return;
                 }
-                SetCurrentLocation(locationResult.getLastLocation()); // update location
+                if (mMap != null) {
+                    SetCurrentLocation(locationResult.getLastLocation()); // update location
+                }
             }
         };
     }
