@@ -27,6 +27,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.example.database.FireBaseService;
@@ -38,7 +39,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
     //debugging
     private static final String TAG = "MainActivity";
-
     //parking spots
     private List<Location> parkingSpots;
     private Location mCurrentLocation; //SET WITH SetCurrentLocation(Location location)
@@ -50,111 +50,40 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     private LocationCallback locationCallback;
     private boolean requestingLocationUpdates = true; // toggles location updates
     private LocationRequest locationRequest = getDefaultLocationRequest();
-    //db
-    private ServiceConnection mDBConnection;
-    FireBaseService databaseClient;
-    private Boolean mShouldUnbind;
-    //button
-    private Button goToLocation;
-    private ViewPager mViewPager;
-
-    //map
-    MapView mMapView;
-
-
-    //lifecycle overrides
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //location
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(getActivity());
-        createLocationCallBackObject();
-        startLocationUpdates();
     }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-            // Inflate the layout for this fragment
-            return inflater.inflate(R.layout.map, container, false);
+
+        View view = inflater.inflate(R.layout.map, container, false);
+        // Gets the MapView from the XML layout and creates it
+        final SupportMapFragment myMAPF = (SupportMapFragment) getChildFragmentManager()
+                .findFragmentById(R.id.map);
+        myMAPF.getMapAsync(this);
+        return  view;
     }
 
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-
-
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        if (requestingLocationUpdates) {
-            startLocationUpdates();
-        }
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        doUnbindService();
-    }
 
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        createConnectToDatabaseService();
-        doBindDBService();
-    }
+        mMap.setMyLocationEnabled(true);
 
-    // database service connetion
-
-    private void createConnectToDatabaseService() {
-
-        mDBConnection = new ServiceConnection() {
-            @Override
-            public void onServiceConnected(ComponentName className, IBinder service) {
-                FireBaseService.FireBaseBinder binder = (FireBaseService.FireBaseBinder) service;
-                databaseClient = binder.getService();
-                setParkingSpots(databaseClient.getLocations());
-
-            }
-            @Override
-            public void onServiceDisconnected(ComponentName className) {
-                databaseClient = null;
-            }
-        };
-    }
-
-    void doBindDBService() {
-        if (getActivity().bindService(new Intent(getActivity(), FireBaseService.class),
-                mDBConnection, Context.BIND_AUTO_CREATE)) {
-            mShouldUnbind = true;
-        } else {
-            Log.e(TAG, "Error: The requested service doesn't " +
-                    "exist, or this client isn't allowed access to it.");
-        }
-    }
-
-    void doUnbindService() {
-        if (mShouldUnbind) {
-            getActivity().unbindService(mDBConnection);
-            mShouldUnbind = false;
-        }
+        createLocationCallBackObject();
+        startLocationUpdates();
     }
 
     //location related
-
     private void setParkingSpots(List<Location> locations){
         parkingSpots = locations;
-
         for (Location l : parkingSpots){
             mMap.addMarker(new MarkerOptions().position(toLatLng(l)).title("a free parking spot"));
         }
@@ -162,8 +91,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
     private void SetCurrentLocation(Location location){
         mCurrentLocation = location;
-        mMap.setMyLocationEnabled(true);
-
         if (firstLocation == true) {
             moveCameraTo(mCurrentLocation);
             firstLocation = false;
@@ -184,9 +111,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                     Log.d(TAG, "LocationCallBack : onLocationResult: location == null");
                     return;
                 }
-                if (mMap != null) {
                     SetCurrentLocation(locationResult.getLastLocation()); // update location
-                }
             }
         };
     }
@@ -205,31 +130,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     }
 
     //camera
-
     private void moveCameraTo(Location coordinates){
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(coordinates.getLatitude(), coordinates.getLongitude()),10f));
-    }
-
-    private void moveCameraTo(LatLng coordinates){
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(coordinates,10f));
-    }
-
-    private void moveCameraTo(LatLng coordinates, float zoom){
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(coordinates,zoom));
-    }
-
-    private void setupViewPager(ViewPager viewPager){
-        MapFragment mapactivity = new MapFragment();
-
-        FragmentAdapter adapter = new FragmentAdapter(getActivity().getSupportFragmentManager());
-
-        adapter.addFragment(new LocationInfo(),"LocationFragment");
-        viewPager.setAdapter(adapter);
-    }
-
-    public void setViewPager(int fragmentNumber){
-        mViewPager.setCurrentItem(fragmentNumber);
-
     }
 
 }

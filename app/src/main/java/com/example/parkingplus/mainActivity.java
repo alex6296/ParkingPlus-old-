@@ -2,7 +2,12 @@ package com.example.parkingplus;
 
 import android.Manifest;
 import android.app.Dialog;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -11,6 +16,7 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
+import com.example.database.FireBaseService;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.karumi.dexter.Dexter;
@@ -25,28 +31,71 @@ public class mainActivity extends FragmentActivity  {
 
     //debugging
     private static final String TAG = "MainActivity";
-
     //permissions
     private  boolean userPermissionGranted = false;
+    //db
+    private ServiceConnection mDBConnection;
+    FireBaseService databaseClient;
 
-    private FragmentAdapter mSectionsStatePagerAdapter;
-
+    FragmentManager fm;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+         //check permissions
         InitialChecks();
+        //start db service
+        createConnectToDatabaseService();
+        doBindDBService();
+        //set view
         setContentView(R.layout.main);
 
+        //create fragments
         Fragment map = new MapFragment();
 
-        FragmentManager fm = getSupportFragmentManager();
+        //set fragment
+        fm = getSupportFragmentManager();
         FragmentTransaction transaction = fm.beginTransaction();
         transaction.replace(R.id.frameLayout, map);
         transaction.commit();
 
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unbindService(mDBConnection);
+    }
+
+    // database service connection
+    private void createConnectToDatabaseService() {
+
+        mDBConnection = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName className, IBinder service) {
+                FireBaseService.FireBaseBinder binder = (FireBaseService.FireBaseBinder) service;
+                databaseClient = binder.getService();
+
+            }
+            @Override
+            public void onServiceDisconnected(ComponentName className) {
+                databaseClient = null;
+            }
+        };
+    }
+
+    void doBindDBService() {
+        if (bindService(new Intent(this, FireBaseService.class),
+                mDBConnection, Context.BIND_AUTO_CREATE)) {
+        } else {
+            Log.e(TAG, "Error: The requested service doesn't " +
+                    "exist, or this client isn't allowed access to it.");
+        }
+    }
+
+
+
+    // permissions
     private void InitialChecks(){
         //Checking if google services is working
         if(!googleServicesWorks()){
@@ -57,11 +106,9 @@ public class mainActivity extends FragmentActivity  {
         requestPermissions();
         if (!userPermissionGranted){
             Log.d(TAG, "userPermissions: failed ");
-           finish();
+            finish();
         }
     }
-
-    // permissions
     private void requestPermissions() {
 
         Dexter.withActivity(this)
@@ -83,7 +130,6 @@ public class mainActivity extends FragmentActivity  {
 
 
     }
-
     private boolean googleServicesWorks(){
         Log.d(TAG, "googleServiceVersionCheck: checking validity service version ");
         int available = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(this);
