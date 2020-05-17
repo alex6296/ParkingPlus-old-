@@ -6,14 +6,19 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.location.Location;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.Toast;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.viewpager.widget.ViewPager;
+
 import com.example.database.FireBaseService;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -35,16 +40,19 @@ public class mainActivity extends FragmentActivity  {
     FireBaseService databaseClient;
     //fragments
     MapFragment mMapFragment;
+    LocationInfo mLocationInf;
 
+    private Button navbutton;
     //fragment manager
     FragmentManager fm;
+    private ViewPager mViewPager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         //hide status bar
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
-         //check permissions
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        //check permissions
         InitialChecks();
         //start db service
         createConnectToDatabaseService();
@@ -53,12 +61,32 @@ public class mainActivity extends FragmentActivity  {
         setContentView(R.layout.main);
         //create map fragment
         mMapFragment = new MapFragment();
+        mLocationInf = new LocationInfo();
 
         //set fragment
         fm = getSupportFragmentManager();
-        FragmentTransaction transaction = fm.beginTransaction();
+        final FragmentTransaction transaction = fm.beginTransaction();
         transaction.replace(R.id.frameLayout, mMapFragment);
         transaction.commit();
+
+        navbutton = (Button) findViewById(R.id.navButton);
+        navbutton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                final FragmentTransaction transaction = fm.beginTransaction();
+                transaction.replace(R.id.frameLayout, mLocationInf);
+                transaction.commit();
+
+
+            }
+        });
+
+        mViewPager = (ViewPager) findViewById(R.id.container2);
+
+        setupViewPager(mViewPager);
+
+
     }
 
     @Override
@@ -75,7 +103,9 @@ public class mainActivity extends FragmentActivity  {
             public void onServiceConnected(ComponentName className, IBinder service) {
                 FireBaseService.FireBaseBinder binder = (FireBaseService.FireBaseBinder) service;
                 databaseClient = binder.getService();
-                mMapFragment.setParkingSpots(databaseClient.getLocations());
+                List<Location> databaseData = databaseClient.getLocations();
+                mMapFragment.setParkingSpots(databaseData);
+                mLocationInf.setLocationData(databaseData);
 
             }
             @Override
@@ -148,5 +178,14 @@ public class mainActivity extends FragmentActivity  {
         }
         return false;
 
+    }
+    private void setupViewPager(ViewPager viewPager){
+        FragmentAdapter adapter = new FragmentAdapter(getSupportFragmentManager());
+
+        viewPager.setAdapter(adapter);
+
+    }
+    public void setViewPager(int fragmentNumber){
+       mViewPager.setCurrentItem(fragmentNumber);
     }
 }

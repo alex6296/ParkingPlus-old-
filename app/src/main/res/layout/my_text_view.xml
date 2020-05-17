@@ -5,4 +5,4 @@
     android:id="@+id/customtext"
     android:layout_height="match_parent" >
 
-</TextView>
+    </TextView>

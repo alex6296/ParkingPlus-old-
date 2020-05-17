@@ -30,11 +30,11 @@
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/locationsList"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_height="434dp"
             android:layout_alignParentLeft="true"
-            android:layout_marginLeft="194dp"
-            android:layout_marginTop="250dp" />
+            android:layout_marginLeft="0dp"
+            android:layout_marginTop="75dp" />
 
     </RelativeLayout>
 

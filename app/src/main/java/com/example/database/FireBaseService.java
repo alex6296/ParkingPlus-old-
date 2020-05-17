@@ -12,6 +12,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -29,8 +30,6 @@ public class FireBaseService extends Service {
     DatabaseReference retriever;
     List<Location> locations = new ArrayList<Location>();
     private final IBinder mBinder = new FireBaseBinder();
-    double longitude;
-    double lattitude;
 
     public class FireBaseBinder extends Binder {
         public FireBaseService getService(){
@@ -38,40 +37,49 @@ public class FireBaseService extends Service {
         }
     }
 
+    public interface DataStatus{
+        void DataIsLoaded(List<Location> locations, List<String> keys);
+        void DataIsInserted();
+        void DataIsUpdated();
+        void DataIsDeleted();
+    }
+
     @Override
     public void onCreate() {
         Toast.makeText(FireBaseService.this, "Firebase Connection successfull", Toast.LENGTH_LONG).show();
         pusher = FirebaseDatabase.getInstance().getReference().child("Location");
+        retrieveFromFirebase();
 
-        Location l1 = new Location(LocationManager.GPS_PROVIDER);
 
-        l1.setLatitude(37.4219617);
-        l1.setLongitude(-122.092);
-
-        Location l2 = new Location(LocationManager.GPS_PROVIDER);
-        l2.setLatitude(37.3275338);
-        l2.setLongitude(-122.101);
-
-        Location l3 = new Location(LocationManager.GPS_PROVIDER);
-        l3.setLatitude(37.4719520);
-        l3.setLongitude(-122.121);
-
-        locations.add(l1);
-        locations.add(l2);
-        locations.add(l3);
     }
     public void pushToFirebase(Location location){
         pusher.push().setValue(location);
     }
 
-    public Location retrieveFromFirebase(String idnumber){
-        retriever = FirebaseDatabase.getInstance().getReference().child(idnumber);
-        retriever.addValueEventListener(new ValueEventListener() {
+    public void retrieveFromFirebase(){
+        retriever = FirebaseDatabase.getInstance().getReference("Location");
+        pusher.addValueEventListener(new ValueEventListener() {
 
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-               lattitude = (double) dataSnapshot.child("lattitude").getValue();
-               longitude = (double) dataSnapshot.child("longitude").getValue();
+
+
+                    locations.clear();
+                    List<String> keys = new ArrayList<>();
+                    for(DataSnapshot keyNode: dataSnapshot.getChildren()){
+                        keys.add(keyNode.getKey());
+                        tempLongitude location = new tempLongitude();
+                        location = keyNode.getValue(tempLongitude.class);
+                        Location l1 = new Location(LocationManager.GPS_PROVIDER);
+                        l1.setLatitude(location.getLattitude());
+                        l1.setLongitude(location.getLongitude());
+                        System.out.println(l1);
+                        locations.add(l1);
+
+                }
+
+               //lattitude = (double) dataSnapshot.child("lattitude").getValue();
+               //longitude = (double) dataSnapshot.child("longitude").getValue();
                 //possible issue here with the casting of doubles, since firebase seems eager to only collect objects
             }
 
@@ -80,10 +88,7 @@ public class FireBaseService extends Service {
 
             }
         });
-        Location dLocation = new Location(LocationManager.GPS_PROVIDER);
-        dLocation.setLongitude(longitude);
-        dLocation.setLatitude(lattitude);
-        return dLocation;
+
 
 
 

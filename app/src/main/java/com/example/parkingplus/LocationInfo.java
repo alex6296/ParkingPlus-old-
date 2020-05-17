@@ -1,6 +1,7 @@
 package com.example.parkingplus;
 
 
+import android.location.Location;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,13 +14,20 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.List;
+
 public class LocationInfo extends Fragment {
     private Button goBackBtn;
     private RecyclerView locationsList;
     private Button test;
     private RecyclerView.Adapter mAdapter;
     private RecyclerView.LayoutManager layoutManager;
-    private String[] locationDataSet;
+    private List<Location> locationDataSet;
+
+    public  void setLocationData(List<Location> databaseData) {
+        locationDataSet = databaseData;
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -39,7 +47,7 @@ public class LocationInfo extends Fragment {
         goBackBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-               // ((MapFragment)getActivity()).setViewPager(0); //TODO
+               ((mainActivity)getActivity()).setViewPager(0);
 
 
 
@@ -49,6 +57,8 @@ public class LocationInfo extends Fragment {
     }
 
     private static final String TAG = "LocationInfo";
+
+
 
 
 }

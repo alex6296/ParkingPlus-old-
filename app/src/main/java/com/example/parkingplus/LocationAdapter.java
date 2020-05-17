@@ -1,13 +1,16 @@
 package com.example.parkingplus;
 
+import android.location.Location;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.List;
+
 public class LocationAdapter extends RecyclerView.Adapter<LocationAdapter.MyViewHolder> {
-    private String[] mDataset;
+    private List<Location> mDataset;
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -22,8 +25,9 @@ public class LocationAdapter extends RecyclerView.Adapter<LocationAdapter.MyView
     }
 
     // Provide a suitable constructor (depends on the kind of dataset)
-    public LocationAdapter(String[] myDataset) {
+    public LocationAdapter(List<Location> myDataset) {
         mDataset = myDataset;
+
     }
 
     // Create new views (invoked by the layout manager)
@@ -35,6 +39,7 @@ public class LocationAdapter extends RecyclerView.Adapter<LocationAdapter.MyView
                 .inflate(R.layout.my_text_view, parent, false);
 
         MyViewHolder vh = new MyViewHolder(v);
+
         return vh;
     }
 
@@ -43,14 +48,14 @@ public class LocationAdapter extends RecyclerView.Adapter<LocationAdapter.MyView
     public void onBindViewHolder(MyViewHolder holder, int position) {
         // - get element from your dataset at this position
         // - replace the contents of the view with that element
-        holder.textView.setText(mDataset[position]);
+        holder.textView.setText(mDataset.get(position).toString());
 
     }
 
     // Return the size of your dataset (invoked by the layout manager)
     @Override
     public int getItemCount() {
-        mDataset = new String[]{"bloop", "bloop", "scoop"};
-        return mDataset.length;
+
+        return mDataset.size();
     }
 }
