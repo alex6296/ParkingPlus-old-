@@ -33,7 +33,7 @@ public class LocationInfo extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.locationinf, container, false);
 
-        goBackBtn = (Button) view.findViewById(R.id.goBackBtn);
+
         locationsList = (RecyclerView) view.findViewById(R.id.locationsList);
         locationsList.setHasFixedSize(true);
         layoutManager = new LinearLayoutManager(view.getContext());
@@ -42,17 +42,6 @@ public class LocationInfo extends Fragment {
         mAdapter = new LocationAdapter(locationDataSet);
         locationsList.setAdapter(mAdapter);
 
-
-
-        goBackBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-               ((mainActivity)getActivity()).setViewPager(0);
-
-
-
-            }
-        });
         return view;
     }
 

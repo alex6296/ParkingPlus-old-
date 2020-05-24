@@ -6,6 +6,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -42,11 +44,23 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         super.onCreate(savedInstanceState);
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(getActivity());
     }
+    
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.map, container, false);
+        View view =  inflater.inflate(R.layout.map, container, false);
+        Button Btn= (Button) view.findViewById(R.id.getLocations);
+
+        Btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                for (Location l : parkingSpots){
+                    mMap.addMarker(new MarkerOptions().position(toLatLng(l)).title("a free parking spot"));
+                }
+            }
+        });
+        return view;
     }
 
     @Override
@@ -69,7 +83,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     }
 
     //location related
-   public void setParkingSpots(List<Location> locations){
+   public void setData(List<Location> locations){
         parkingSpots = locations;
         for (Location l : parkingSpots){
             mMap.addMarker(new MarkerOptions().position(toLatLng(l)).title("a free parking spot"));
@@ -78,10 +92,17 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
     private void SetCurrentLocation(Location location){
         mCurrentLocation = location;
+        moveCameraTo(mCurrentLocation);
         if (firstLocation == true) {
             moveCameraTo(mCurrentLocation);
             firstLocation = false;
         }
+    }
+
+    public void centerCamera(){
+              if(mCurrentLocation != null) {
+                  moveCameraTo(mCurrentLocation);
+              }
     }
 
     private void startLocationUpdates() {

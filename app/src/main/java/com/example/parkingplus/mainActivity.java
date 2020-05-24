@@ -14,6 +14,8 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Toast;
+
+import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
@@ -73,10 +75,19 @@ public class mainActivity extends FragmentActivity  {
         navbutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Fragment active_fragment  = fm.findFragmentById(R.id.frameLayout);
 
-                final FragmentTransaction transaction = fm.beginTransaction();
-                transaction.replace(R.id.frameLayout, mLocationInf);
-                transaction.commit();
+                if(active_fragment.getId() == mMapFragment.getId()){
+                    final FragmentTransaction transaction = fm.beginTransaction();
+                    transaction.replace(R.id.frameLayout, mLocationInf);
+                    transaction.commit();
+                }else{
+                    final FragmentTransaction transaction = fm.beginTransaction();
+                    transaction.replace(R.id.frameLayout, mMapFragment);
+                    transaction.commit();
+                }
+
+
 
 
             }
@@ -104,7 +115,7 @@ public class mainActivity extends FragmentActivity  {
                 FireBaseService.FireBaseBinder binder = (FireBaseService.FireBaseBinder) service;
                 databaseClient = binder.getService();
                 List<Location> databaseData = databaseClient.getLocations();
-                mMapFragment.setParkingSpots(databaseData);
+                mMapFragment.setData(databaseData);
                 mLocationInf.setLocationData(databaseData);
 
             }
