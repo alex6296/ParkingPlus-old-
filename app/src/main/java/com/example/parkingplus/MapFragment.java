@@ -34,6 +34,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     private Boolean firstLocation = true; //
     //map
     private GoogleMap mMap;
+    private Boolean setParkingSpots= false;
     //location
     private FusedLocationProviderClient fusedLocationClient;
     private LocationCallback locationCallback;
@@ -44,7 +45,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         super.onCreate(savedInstanceState);
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(getActivity());
     }
-    
+
 
     @Nullable
     @Override
@@ -58,6 +59,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                 for (Location l : parkingSpots){
                     mMap.addMarker(new MarkerOptions().position(toLatLng(l)).title("a free parking spot"));
                 }
+                setParkingSpots=true;
             }
         });
         return view;
@@ -88,21 +90,23 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         for (Location l : parkingSpots){
             mMap.addMarker(new MarkerOptions().position(toLatLng(l)).title("a free parking spot"));
         }
+
     }
 
     private void SetCurrentLocation(Location location){
         mCurrentLocation = location;
         moveCameraTo(mCurrentLocation);
+
+        if(setParkingSpots == true) {
+            for (Location l : parkingSpots) {
+                mMap.addMarker(new MarkerOptions().position(toLatLng(l)).title("a free parking spot"));
+            }
+        }
+
         if (firstLocation == true) {
             moveCameraTo(mCurrentLocation);
             firstLocation = false;
         }
-    }
-
-    public void centerCamera(){
-              if(mCurrentLocation != null) {
-                  moveCameraTo(mCurrentLocation);
-              }
     }
 
     private void startLocationUpdates() {
