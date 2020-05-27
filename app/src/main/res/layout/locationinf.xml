@@ -22,7 +22,7 @@
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/locationsList"
             android:layout_width="match_parent"
-            android:layout_height="434dp"
+            android:layout_height="550dp"
             android:layout_alignParentLeft="true"
             android:layout_marginLeft="0dp"
             android:layout_marginTop="75dp" />
