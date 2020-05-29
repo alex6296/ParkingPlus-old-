@@ -1,35 +1,21 @@
 package com.example.parkingplus;
 
-import android.Manifest;
-import android.app.Dialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.location.Location;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.Toast;
-
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
-import androidx.viewpager.widget.ViewPager;
-
-import com.example.database.FireBaseService;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
-import com.karumi.dexter.Dexter;
-import com.karumi.dexter.MultiplePermissionsReport;
-import com.karumi.dexter.PermissionToken;
-import com.karumi.dexter.listener.PermissionRequest;
-import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
-import java.util.List;
+import com.example.parkingplus.data.FireBaseService;
+import com.example.parkingplus.utilities.PermissionUtil;
 
 public class mainActivity extends FragmentActivity  {
 
@@ -40,14 +26,15 @@ public class mainActivity extends FragmentActivity  {
     //db
     private ServiceConnection mDBConnection;
     FireBaseService databaseClient;
+
     //fragments
     MapFragment mMapFragment;
-    LocationInfo mLocationInf;
-
-    private Button navbutton;
+    ListFragment mLocationList;
     //fragment manager
     FragmentManager fm;
-    private ViewPager mViewPager;
+
+    //util
+    PermissionUtil permissionUtil;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,7 +42,7 @@ public class mainActivity extends FragmentActivity  {
         //hide status bar
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         //check permissions
-        InitialChecks();
+
         //start db service
         createConnectToDatabaseService();
         doBindDBService();
@@ -63,7 +50,7 @@ public class mainActivity extends FragmentActivity  {
         setContentView(R.layout.main);
         //create map fragment
         mMapFragment = new MapFragment();
-        mLocationInf = new LocationInfo();
+        mLocationList = new ListFragment();
 
         //set fragment
         fm = getSupportFragmentManager();
@@ -71,7 +58,7 @@ public class mainActivity extends FragmentActivity  {
         transaction.replace(R.id.frameLayout, mMapFragment);
         transaction.commit();
 
-        navbutton = (Button) findViewById(R.id.navButton);
+        Button navbutton = (Button) findViewById(R.id.navButton);
         navbutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -79,25 +66,22 @@ public class mainActivity extends FragmentActivity  {
 
                 if(active_fragment.getId() == mMapFragment.getId()){
                     final FragmentTransaction transaction = fm.beginTransaction();
-                    transaction.replace(R.id.frameLayout, mLocationInf);
+                    transaction.replace(R.id.frameLayout, mLocationList);
                     transaction.commit();
                 }else{
                     final FragmentTransaction transaction = fm.beginTransaction();
                     transaction.replace(R.id.frameLayout, mMapFragment);
                     transaction.commit();
                 }
-
-
-
-
             }
         });
+    }
 
-        mViewPager = (ViewPager) findViewById(R.id.container2);
-
-        setupViewPager(mViewPager);
-
-
+    @Override
+    protected void onStart() {
+        super.onStart();
+        permissionUtil = new PermissionUtil(this);
+        permissionUtil.permissionAndGoogleServiceChecks();
     }
 
     @Override
@@ -114,10 +98,10 @@ public class mainActivity extends FragmentActivity  {
             public void onServiceConnected(ComponentName className, IBinder service) {
                 FireBaseService.FireBaseBinder binder = (FireBaseService.FireBaseBinder) service;
                 databaseClient = binder.getService();
-                List<Location> databaseData = databaseClient.getLocations();
-                mMapFragment.setData(databaseData);
-                mLocationInf.setLocationData(databaseData);
 
+                databaseClient.addSubscribe(mMapFragment);
+                databaseClient.addSubscribe(mLocationList);
+                databaseClient.updateLocationData();
             }
             @Override
             public void onServiceDisconnected(ComponentName className) {
@@ -136,67 +120,9 @@ public class mainActivity extends FragmentActivity  {
 
     }
 
-    // permissions
-    private void InitialChecks(){
-        //Checking if google services is working
-        if(!googleServicesWorks()){
-            Log.d(TAG, "googleServiceVersionCheck:failed ");
-            finish();
-        }
-        //Checking if permissions are granted
-        requestPermissions();
-        if (!userPermissionGranted){
-            Log.d(TAG, "userPermissions: failed ");
-            finish();
-        }
-    }
-    private void requestPermissions() {
-
-        Dexter.withActivity(this)
-                .withPermissions(
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                        // if more permissions need add here
-                ).withListener(new MultiplePermissionsListener() {
-            @Override public void onPermissionsChecked(MultiplePermissionsReport report) {
-
-                if(report.areAllPermissionsGranted()){
-                    userPermissionGranted = true;
-                }
-            }
-            @Override public void onPermissionRationaleShouldBeShown(List<PermissionRequest> permissions, PermissionToken token) {
-                token.continuePermissionRequest();
-            }
-        }).check();
 
 
-    }
-    private boolean googleServicesWorks(){
-        Log.d(TAG, "googleServiceVersionCheck: checking validity service version ");
-        int available = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(this);
 
-        if (available == ConnectionResult.SUCCESS){
-            Log.d(TAG, "googleServiceVersionCheck: required services working ");
-            return true;
-        }
-        if (GoogleApiAvailability.getInstance().isUserResolvableError(available)){
-            Log.d(TAG, "googleServiceVersionCheck: UserResolvableError occurred");
-            Dialog dialog = GoogleApiAvailability.getInstance().getErrorDialog(this,available,9001);
-            dialog.show();
-        } else{
-            Log.d(TAG, "googleServiceVersionCheck: Google services version is incompatible");
-            Toast.makeText(this,"Google services version is incompatible",Toast.LENGTH_LONG).show();
-        }
-        return false;
 
-    }
-    private void setupViewPager(ViewPager viewPager){
-        FragmentAdapter adapter = new FragmentAdapter(getSupportFragmentManager());
 
-        viewPager.setAdapter(adapter);
-
-    }
-    public void setViewPager(int fragmentNumber){
-       mViewPager.setCurrentItem(fragmentNumber);
-    }
 }

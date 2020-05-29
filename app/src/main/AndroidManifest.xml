@@ -40,7 +40,7 @@
             </intent-filter>
 
         </activity>
-        <service android:enabled="true" android:name="com.example.database.FireBaseService" />
+        <service android:enabled="true" android:name=".data.FireBaseService" />
     </application>
 
 </manifest>

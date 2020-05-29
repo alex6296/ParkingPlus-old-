@@ -7,10 +7,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import com.example.parkingplus.data.ILocationListObserver;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
@@ -22,19 +22,19 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+
+import java.util.ArrayList;
 import java.util.List;
 
-public class MapFragment extends Fragment implements OnMapReadyCallback {
+public class MapFragment extends Fragment implements OnMapReadyCallback, ILocationListObserver {
 
     //debugging
     private static final String TAG = "MainActivity";
     //parking spots
-    private List<Location> parkingSpots;
     private Location mCurrentLocation; //SET WITH SetCurrentLocation(Location location)
-    private Boolean firstLocation = true; //
+    private List<Location> mLocationList= new ArrayList<>();
     //map
     private GoogleMap mMap;
-    private Boolean setParkingSpots= false;
     //location
     private FusedLocationProviderClient fusedLocationClient;
     private LocationCallback locationCallback;
@@ -44,25 +44,15 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(getActivity());
+        //start location services
+        createLocationCallBackObject();
+        startLocationUpdates();
     }
-
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view =  inflater.inflate(R.layout.map, container, false);
-        Button Btn= (Button) view.findViewById(R.id.getLocations);
-
-        Btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                for (Location l : parkingSpots){
-                    mMap.addMarker(new MarkerOptions().position(toLatLng(l)).title("a free parking spot"));
-                }
-                setParkingSpots=true;
-            }
-        });
-        return view;
+        return  inflater.inflate(R.layout.map, container, false);
     }
 
     @Override
@@ -79,33 +69,22 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         mMap = googleMap;
         mMap.setMyLocationEnabled(true);
 
-        //start location services
-        createLocationCallBackObject();
-        startLocationUpdates();
+        if(mCurrentLocation != null){
+            moveCameraTo(mCurrentLocation);
+        }
+        if(mLocationList != null)
+            setMarkers();
     }
 
     //location related
-   public void setData(List<Location> locations){
-        parkingSpots = locations;
-        for (Location l : parkingSpots){
-            mMap.addMarker(new MarkerOptions().position(toLatLng(l)).title("a free parking spot"));
-        }
-
+    public void updateLocationListData(List<Location> locationList){
+        mLocationList = locationList;
+        setMarkers();
     }
 
-    private void SetCurrentLocation(Location location){
-        mCurrentLocation = location;
-        moveCameraTo(mCurrentLocation);
-
-        if(setParkingSpots == true) {
-            for (Location l : parkingSpots) {
-                mMap.addMarker(new MarkerOptions().position(toLatLng(l)).title("a free parking spot"));
-            }
-        }
-
-        if (firstLocation == true) {
-            moveCameraTo(mCurrentLocation);
-            firstLocation = false;
+    private void setMarkers(){
+        for (Location l :mLocationList){
+            mMap.addMarker(new MarkerOptions().position(toLatLng(l)).title("a free parking spot"));
         }
     }
 
@@ -123,7 +102,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                     Log.d(TAG, "LocationCallBack : onLocationResult: location == null");
                     return;
                 }
-                    SetCurrentLocation(locationResult.getLastLocation()); // update location
+                mCurrentLocation = locationResult.getLastLocation(); // update location
+
+                moveCameraTo(mCurrentLocation);
             }
         };
     }
